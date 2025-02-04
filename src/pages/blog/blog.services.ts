@@ -44,14 +44,40 @@ import { Post } from 'types/blog.type'
  */
 
 export const blogApi = createApi({
-  reducerPath: 'blogApi', // Tên filed trong Redux store
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/' }), // vì đang chạy trên Local bằng JSON Server nên sẽ là localhost
-  endpoints: (builder) => ({
-    // Generic type theo thứ tự là kiểu response trả về và argument của query
-    getPosts: builder.query<Post[], void>({
-      query: () => 'posts' // method không có argument
+    reducerPath: 'blogApi', // Tên filed trong Redux store
+    tagTypes: ['Post'], // Tên tag để quản lý các request
+    baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/' }), // vì đang chạy trên Local bằng JSON Server nên sẽ là localhost
+    endpoints: (builder) => ({
+        // Generic type theo thứ tự là kiểu response trả về và argument của query
+        getPosts: builder.query<Post[], void>({
+            query: () => 'posts', // method không có argument
+            providesTags(result) {
+                /**
+                 * Cái callback này sẽ được chạy mỗi khi getPosts được gọi
+                 * Mong muốn là sẽ return về một mảng kiểu
+                 * ```ts
+                 * interface Tags: {
+                 *      type: 'Post',
+                 *      id: string
+                 * }[]
+                 * ```
+                 * vì thế phải thêm as const vào để báo hiệu type là Read only, không thể mutate
+                 */
+            }
+        }),
+        /**
+         * Chúng ta dùng mutation đối với các trường hợp cần thay đổi dữ liệu trên server
+         * Ví dụ: POST, PUT, DELETE
+         * Post là response trả về Omit<Post, 'id'> là body gửi lên
+         */
+        addPost: builder.mutation<Post, Omit<Post, 'id'>>({
+            query: (body) => ({
+                url: 'posts',
+                method: 'POST',
+                body
+            })
+        })
     })
-  })
 })
 
-export const { useGetPostsQuery } = blogApi
+export const { useGetPostsQuery, useAddPostMutation } = blogApi

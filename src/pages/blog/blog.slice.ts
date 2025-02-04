@@ -1,17 +1,17 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 interface BlogState {
-  postId: string
+    postId: string
 }
 
 const initialState: BlogState = {
-  postId: ''
+    postId: ''
 }
 
 const blogSlice = createSlice({
-  name: 'blog',
-  initialState,
-  reducers: {}
+    name: 'blog',
+    initialState,
+    reducers: {}
 })
 
 export default blogSlice.reducer
