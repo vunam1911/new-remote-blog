@@ -2,6 +2,8 @@ import { configureStore } from '@reduxjs/toolkit'
 import blogReducer from './pages/blog/blog.slice'
 import { blogApi } from './pages/blog/blog.services'
 import { setupListeners } from '@reduxjs/toolkit/dist/query'
+import { useDispatch, useSelector } from 'react-redux'
+
 export const store = configureStore({
     reducer: {
         blog: blogReducer,
@@ -18,3 +20,6 @@ setupListeners(store.dispatch)
 export type RootState = ReturnType<typeof store.getState>
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch
+
+export const useAppDispatch = () => useDispatch<AppDispatch>()
+export const useAppSelector = () => useSelector<RootState>((state) => state)

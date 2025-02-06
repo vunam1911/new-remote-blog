@@ -45,7 +45,7 @@ import { Post } from 'types/blog.type'
 
 export const blogApi = createApi({
     reducerPath: 'blogApi', // Tên filed trong Redux store
-    tagTypes: ['Post'], // Tên tag để quản lý các request
+    tagTypes: ['Posts'], // Tên tag để quản lý các request
     baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/' }), // vì đang chạy trên Local bằng JSON Server nên sẽ là localhost
     endpoints: (builder) => ({
         // Generic type theo thứ tự là kiểu response trả về và argument của query
@@ -63,6 +63,14 @@ export const blogApi = createApi({
                  * ```
                  * vì thế phải thêm as const vào để báo hiệu type là Read only, không thể mutate
                  */
+                if (result) { // result là data trả về từ server
+                    const final = [
+                        ...result.map(({ id }) => ({ type: 'Posts' as const, id })),
+                        { type: 'Posts' as const, id: 'LIST' }
+                    ]
+                    return final
+                }
+                return [{ type: 'Posts', id: 'LIST' }]
             }
         }),
         /**
@@ -75,9 +83,23 @@ export const blogApi = createApi({
                 url: 'posts',
                 method: 'POST',
                 body
-            })
+            }),
+            /** 
+             * - invalidatesTags cung cấp các tag để báo hiệu cho những methods nào có providesTags match
+             * với nó sẽ bị gọi lại. Trong trường hợp getPosts sẽ chạy lại
+             * -invalidatesTags là callback được gọi khi mutation được thực hiện
+             * Nó sẽ invalidate (xóa) các tag tương ứng với các request đang chạy
+             * Ví dụ: khi thêm 1 bài post thì sẽ invalidate tag 'Posts'
+             * Sau đó khi gọi getPosts sẽ fetch lại dữ liệu mới nhất từ server
+             */
+            invalidatesTags: (result, error, body) => { // result là data trả về từ server, error là lỗi nếu có, body là body gửi lên ở argument hàm query
+                return [{ type: 'Posts', id: 'LIST' }]
+            }
+        }),
+        getPostById: builder.query<Post, string>({
+            query: (postId) => `posts/${postId}`
         })
     })
 })
 
-export const { useGetPostsQuery, useAddPostMutation } = blogApi
+export const { useGetPostsQuery, useAddPostMutation, useGetPostByIdQuery } = blogApi
