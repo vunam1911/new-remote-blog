@@ -87,7 +87,7 @@ export const blogApi = createApi({
             /** 
              * - invalidatesTags cung cấp các tag để báo hiệu cho những methods nào có providesTags match
              * với nó sẽ bị gọi lại. Trong trường hợp getPosts sẽ chạy lại
-             * -invalidatesTags là callback được gọi khi mutation được thực hiện
+             * - invalidatesTags là callback được gọi khi mutation được thực hiện
              * Nó sẽ invalidate (xóa) các tag tương ứng với các request đang chạy
              * Ví dụ: khi thêm 1 bài post thì sẽ invalidate tag 'Posts'
              * Sau đó khi gọi getPosts sẽ fetch lại dữ liệu mới nhất từ server
@@ -96,10 +96,35 @@ export const blogApi = createApi({
                 return [{ type: 'Posts', id: 'LIST' }]
             }
         }),
+        updatePost: builder.mutation<Post, Post>({
+            query: ({ id, ...rest }) => ({
+                url: `posts/${id}`,
+                method: 'PUT',
+                body: { ...rest }
+            }),
+            invalidatesTags: (result, error, body) => {
+                return [{ type: 'Posts', id: body.id }]
+            }
+        }),
         getPostById: builder.query<Post, string>({
-            query: (postId) => `posts/${postId}`
+            query: (postId) => `posts/${postId}`,
+        }),
+        deletePost: builder.mutation<Post, string>({
+            query: (postId) => ({
+                url: `posts/${postId}`,
+                method: 'DELETE'
+            }),
+            invalidatesTags: (result, error, postId) => {
+                return [{ type: 'Posts', id: postId }]
+            }
         })
     })
 })
 
-export const { useGetPostsQuery, useAddPostMutation, useGetPostByIdQuery } = blogApi
+export const {
+    useGetPostsQuery,
+    useAddPostMutation,
+    useGetPostByIdQuery,
+    useUpdatePostMutation,
+    useDeletePostMutation
+} = blogApi

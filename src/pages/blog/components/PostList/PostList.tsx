@@ -4,13 +4,19 @@ import { Fragment } from 'react'
 import SkeletonPost from '../SkeletonPost'
 import { useAppDispatch } from 'store'
 import { startEditPost } from 'pages/blog/blog.slice'
+import { useDeletePostMutation } from 'pages/blog/blog.services'
 
 export default function PostList() {
     const { data, isLoading, isFetching } = useGetPostsQuery()
     const dispatch = useAppDispatch()
+    const [deletePost, deletePostResult] = useDeletePostMutation()
 
     const handleStartEditPost = (postId: string) => {
         dispatch(startEditPost(postId))
+    }
+
+    const handleDeletePost = async (postId: string) => {
+        await deletePost(postId).unwrap()
     }
 
     return (
@@ -35,7 +41,14 @@ export default function PostList() {
                     )}
                     {!isFetching &&
                         data &&
-                        data.map((post) => <PostItem key={post.id} post={post} onStartEdit={handleStartEditPost} />)}
+                        data.map((post) => (
+                            <PostItem
+                                key={post.id}
+                                post={post}
+                                onStartEdit={handleStartEditPost}
+                                onDelete={handleDeletePost}
+                            />
+                        ))}
                 </div>
             </div>
         </div>
