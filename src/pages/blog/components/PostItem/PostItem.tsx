@@ -20,7 +20,7 @@ export default function PostItem(props: PostItemProps) {
                 />
             </div>
             <div className='flex flex-col gap-2 p-4 lg:p-6'>
-                <span className='text-sm text-gray-400'>{post.publishedDate}</span>
+                <span className='text-sm text-gray-400'>{post.publishDate}</span>
                 <h2 className='text-xl font-bold text-gray-800'>{post.title}</h2>
                 <p className='text-gray-500'>{post.description}</p>
                 <div>

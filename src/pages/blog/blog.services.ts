@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { Post } from 'types/blog.type'
+import { CustomError } from 'utils/helpers'
 
 // Nếu bên slice chúng ta dùng createSlice để tạo slice thì bên RTK query dùng createApi
 // Với createApi chúng ta gọi là slice api
@@ -79,11 +80,20 @@ export const blogApi = createApi({
          * Post là response trả về Omit<Post, 'id'> là body gửi lên
          */
         addPost: builder.mutation<Post, Omit<Post, 'id'>>({
-            query: (body) => ({
-                url: 'posts',
-                method: 'POST',
-                body
-            }),
+            query: (body) => {
+                try {
+                    // throw Error('hehehehe')
+                    // let a: any = null
+                    // a.b = 1
+                    return {
+                        url: 'posts',
+                        method: 'POST',
+                        body
+                    }
+                } catch (error: any) {
+                    throw new CustomError(error.message)
+                }
+            },
             /** 
              * - invalidatesTags cung cấp các tag để báo hiệu cho những methods nào có providesTags match
              * với nó sẽ bị gọi lại. Trong trường hợp getPosts sẽ chạy lại
@@ -93,7 +103,7 @@ export const blogApi = createApi({
              * Sau đó khi gọi getPosts sẽ fetch lại dữ liệu mới nhất từ server
              */
             invalidatesTags: (result, error, body) => { // result là data trả về từ server, error là lỗi nếu có, body là body gửi lên ở argument hàm query
-                return [{ type: 'Posts', id: 'LIST' }]
+                return error ? [] : [{ type: 'Posts', id: 'LIST' }]
             }
         }),
         updatePost: builder.mutation<Post, Post>({
@@ -103,7 +113,7 @@ export const blogApi = createApi({
                 body: { ...rest }
             }),
             invalidatesTags: (result, error, body) => {
-                return [{ type: 'Posts', id: body.id }]
+                return error ? [] : [{ type: 'Posts', id: body.id }]
             }
         }),
         getPostById: builder.query<Post, string>({

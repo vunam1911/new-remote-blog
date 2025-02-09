@@ -1,16 +1,24 @@
+import classNames from 'classnames'
 import { useAddPostMutation, useGetPostByIdQuery, useUpdatePostMutation } from 'pages/blog/blog.services'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from 'store'
 import { Post } from 'types/blog.type'
+import { isEntityError } from 'utils/helpers'
 
 const initialState: Omit<Post, 'id'> = {
     description: '',
     featuredImage: '',
-    publishedDate: '',
+    publishDate: '',
     published: false,
     title: ''
 }
+
+type FormError =
+    | {
+          [key in keyof typeof initialState]: string
+      }
+    | null
 
 export default function CreatePost() {
     const [formData, setFormData] = useState<Omit<Post, 'id'> | Post>(initialState)
@@ -25,13 +33,36 @@ export default function CreatePost() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        if (postId) {
-            await updatePost(formData as Post).unwrap()
-        } else {
-            await addPost(formData as Omit<Post, 'id'>).unwrap()
+        try {
+            if (postId) {
+                await updatePost(formData as Post).unwrap()
+            } else {
+                await addPost(formData as Omit<Post, 'id'>).unwrap()
+            }
+            setFormData(initialState)
+        } catch (error) {
+            console.log(error)
         }
-        setFormData(initialState)
     }
+
+    const errorForm: FormError = useMemo(() => {
+        const errorResult = postId ? updatePostResult.error : addPostResult.error
+        // Vì errorResult có thể là FetchBaseQueryError | SerializedError | undefined, mỗi kiểu lại có cấu trúc khác nhau
+        // nên chúng ta cần kiểm tra để hiển thị cho đúng
+        /**
+         * Bởi vì error Result đang có kiểu là FetchBaseQueryError | SerializedError | undefined vậy nên chúng ta cần kiểm tra
+         * để lấy được kiểu dữ liệu chính xác. Có vài cách,
+         * C1. Dùng as để ép kiểu, có cách dùng instanceof để kiểm tra. VD:
+         * const errorTypeFetchBaseQueryError = errorResult as FetchBaseQueryError
+         * if (errorTypeFetchBaseQueryError) {}
+         *
+         * C2. Dùng "type predicate" để kiểm tra và thu hẹp kiểu của biến có khai báo trong utils
+         */
+        if (isEntityError(errorResult)) {
+            return errorResult.data.error as FormError
+        }
+        return null
+    }, [postId, addPostResult.error, updatePostResult.error])
 
     useEffect(() => {
         if (post) {
@@ -96,21 +127,34 @@ export default function CreatePost() {
             </div>
             <div className='mb-6'>
                 <label
-                    htmlFor='publishedDate'
-                    className='mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300'
+                    htmlFor='publishDate'
+                    className={classNames('mb-2 block text-sm font-medium', {
+                        'text-red-500': Boolean(errorForm?.publishDate),
+                        'text-gray-900 dark:text-gray-300': !Boolean(errorForm?.publishDate)
+                    })}
                 >
                     Publish Date
                 </label>
                 <input
                     type='datetime-local'
-                    id='publishedDate'
-                    name='publishedDate'
-                    className='block w-56 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-blue-500'
-                    placeholder='Title'
+                    id='publishDate'
+                    className={classNames('block w-56 rounded-lg border  p-2.5 text-sm  focus:outline-none ', {
+                        'border-red-500 bg-red-50 text-red-900 placeholder-red-700 focus:border-red-500 focus:ring-blue-500':
+                            Boolean(errorForm?.publishDate),
+                        'border-gray-300 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-blue-500': Boolean(
+                            errorForm?.publishDate
+                        )
+                    })}
                     required
-                    value={formData.publishedDate}
-                    onChange={handleChange}
+                    value={formData.publishDate}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, publishDate: event.target.value }))}
                 />
+                {errorForm?.publishDate && (
+                    <p className='mt-2 text-sm text-red-600'>
+                        <span className='font-medium'>Lỗi! </span>
+                        {errorForm.publishDate}
+                    </p>
+                )}
             </div>
             <div className='mb-6 flex items-center'>
                 <input
