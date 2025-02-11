@@ -47,11 +47,23 @@ import { CustomError } from 'utils/helpers'
 export const blogApi = createApi({
     reducerPath: 'blogApi', // Tên filed trong Redux store
     tagTypes: ['Posts'], // Tên tag để quản lý các request
-    baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/' }), // vì đang chạy trên Local bằng JSON Server nên sẽ là localhost
+    baseQuery: fetchBaseQuery({
+        baseUrl: 'http://localhost:4000/', prepareHeaders(headers) {
+            headers.set('Authorization', `Bearer ABCXYZ${localStorage.getItem('token')}`)
+            return headers
+        }
+    }), // vì đang chạy trên Local bằng JSON Server nên sẽ là localhost
     endpoints: (builder) => ({
         // Generic type theo thứ tự là kiểu response trả về và argument của query
         getPosts: builder.query<Post[], void>({
-            query: () => 'posts', // method không có argument
+            // query: () => 'posts', // method không có argument
+            query: () => ({
+                url: 'posts',
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ABCXYZ${localStorage.getItem('token')}`
+                }
+            }),
             providesTags(result) {
                 /**
                  * Cái callback này sẽ được chạy mỗi khi getPosts được gọi
